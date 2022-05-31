@@ -175,4 +175,4 @@ async function init() {
 }
 
 init()
-schedule.scheduleJob('00 00 */1 * * *', init) // 每小时
+schedule.scheduleJob('00 */30 * * * *', init) // 每半小时
