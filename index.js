@@ -167,11 +167,11 @@ async function init() {
     await getXmTravelReward()
     await receiveReward()
     await startTravel()
-  } catch (e) {
-    console.log()
-    console.log('脚本执行完毕')
-    console.log()
-  }
+  } catch (e) {}
+
+  console.log()
+  console.log('脚本执行完毕')
+  console.log()
 }
 
 init()
