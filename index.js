@@ -86,7 +86,7 @@ function getXmTravelInfo() {
       )
       return Promise.reject()
     }
-    if (remainTravelCnt >= travelTotalTime) {
+    if (!remainTravelCnt) {
       console.log('当日旅行次数已耗尽')
       return Promise.reject()
     }
