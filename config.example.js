@@ -1,5 +1,5 @@
 module.exports = {
-  baseURL: '',
-  cookie: '',
-  deviceId: ''
+  baseURL: 'https://h5.moutai519.com.cn/game/xmTravel/',
+  cookie: '', // 小茅运 H5 页面请求 cookie
+  deviceId: '' // User-Agent 里的 deviceId 值
 }
