@@ -90,7 +90,7 @@ function getXmTravelInfo() {
       console.log('当日旅行次数已耗尽')
       return Promise.reject()
     }
-    console.log('剩余旅行次数: ', travelTotalTime - remainTravelCnt)
+    console.log('剩余旅行次数: ', remainTravelCnt)
   })
 }
 
@@ -155,7 +155,7 @@ function startTravel() {
 async function init() {
   console.log('开始执行')
   let time = +dayjs().format('HH')
-  if (time < 9) {
+  if (time < 9 || time >= 20) {
     console.log('活动未开始')
     return false
   }
