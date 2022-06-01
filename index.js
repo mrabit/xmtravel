@@ -63,11 +63,15 @@ function getXmTravelInfo() {
   return httpRequest(baseURL + 'getXmTravelInfo', 'get', {
     __timestamp: +new Date()
   }).then(d => {
-    let { lastStartTravelTs, travelTotalTime, remainTravelCnt, travelStatus } =
-      d.data
+    let { lastStartTravelTs, travelTotalTime, remainTravelCnt } = d.data
 
     let startTime = dayjs(lastStartTravelTs)
     let endTime = startTime.add(3, 'h')
+    let firstTravel = !dayjs().isSame(startTime, 'day')
+
+    if (firstTravel) {
+      console.log('今日暂未开始旅行')
+    }
 
     let finish = +new Date() - endTime.valueOf() >= 0
     if (!finish) {
@@ -86,11 +90,12 @@ function getXmTravelInfo() {
       )
       return Promise.reject()
     }
-    if (!remainTravelCnt) {
-      console.log('当日旅行次数已耗尽')
-      return Promise.reject()
+    if (!remainTravelCnt) console.log('当日旅行次数已耗尽')
+    else console.log('剩余旅行次数: ', remainTravelCnt)
+    return {
+      remainTravelCnt,
+      finish: finish && !firstTravel // 今日已首次旅行过且当前已完成
     }
-    console.log('剩余旅行次数: ', remainTravelCnt)
   })
 }
 
@@ -163,10 +168,12 @@ async function init() {
     await getUserEnergyAward()
   } catch (e) {}
   try {
-    await getXmTravelInfo()
-    await getXmTravelReward()
-    await receiveReward()
-    await startTravel()
+    let { remainTravelCnt, finish } = await getXmTravelInfo()
+    if (finish) {
+      await getXmTravelReward()
+      await receiveReward()
+    }
+    if (remainTravelCnt) await startTravel()
   } catch (e) {}
 
   console.log()
