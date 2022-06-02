@@ -160,21 +160,22 @@ function startTravel() {
 async function init() {
   console.log('开始执行')
   let time = +dayjs().format('HH')
-  if (time < 9 || time >= 20) {
+  if (time >= 9 && time < 20) {
+    try {
+      await getUserEnergyAward()
+    } catch (e) {}
+    try {
+      let { remainTravelCnt, finish } = await getXmTravelInfo()
+      if (finish) {
+        await getXmTravelReward()
+        await receiveReward()
+      }
+      if (remainTravelCnt) await startTravel()
+    } catch (e) {}
+  } else {
+    console.log()
     console.log('活动未开始')
-    return false
   }
-  try {
-    await getUserEnergyAward()
-  } catch (e) {}
-  try {
-    let { remainTravelCnt, finish } = await getXmTravelInfo()
-    if (finish) {
-      await getXmTravelReward()
-      await receiveReward()
-    }
-    if (remainTravelCnt) await startTravel()
-  } catch (e) {}
 
   console.log()
   console.log('脚本执行完毕')
