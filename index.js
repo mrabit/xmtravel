@@ -180,6 +180,19 @@ function startTravel() {
   })
 }
 
+function shareReward() {
+  console.log()
+  console.log('每日首次分享可领取耐力:')
+  return httpRequest(baseURL + 'shareReward', 'post', {}).then(d => {
+    if (d.code === 2000) {
+      console.log('分享成功')
+    } else {
+      console.log('分享失败', d.message || '')
+      return Promise.reject()
+    }
+  })
+}
+
 async function init() {
   console.log('开始执行')
   let time = +dayjs().format('HH')
@@ -190,6 +203,7 @@ async function init() {
       if (finish) {
         await getXmTravelReward()
         await receiveReward()
+        await shareReward()
       }
       if (remainTravelCnt) await startTravel()
     } catch (e) {}
