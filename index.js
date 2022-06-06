@@ -57,6 +57,29 @@ async function httpRequest(url, method = 'get', _data) {
     })
 }
 
+function getUserIsolationPageData() {
+  console.log()
+  console.log('查询小茅运信息:')
+  return httpRequest(
+    'https://h5.moutai519.com.cn/game/isolationPage/getUserIsolationPageData',
+    'get',
+    {
+      __timestamp: +new Date()
+    }
+  ).then(d => {
+    let { energy, energyReward, xmy } = d.data
+    console.log('当前小茅运值:', xmy)
+    console.log('本月剩余旅行奖励:', energyReward.value)
+    if (energyReward.value <= 0) {
+      return Promise.reject()
+    }
+    if (energy < 100) {
+      console.log('耐力不足')
+      return Promise.reject()
+    }
+  })
+}
+
 function getXmTravelInfo() {
   console.log()
   console.log('获取旅行信息: ')
@@ -162,9 +185,7 @@ async function init() {
   let time = +dayjs().format('HH')
   if (time >= 9 && time < 20) {
     try {
-      await getUserEnergyAward()
-    } catch (e) {}
-    try {
+      await getUserIsolationPageData()
       let { remainTravelCnt, finish } = await getXmTravelInfo()
       if (finish) {
         await getXmTravelReward()
