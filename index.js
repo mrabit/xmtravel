@@ -7,6 +7,8 @@ require('./console')
 
 dayjs.extend(duration)
 
+const TRAVEL_BASE_URL = baseURL + 'xmTravel/'
+
 // axios.defaults.baseURL = baseURL
 axios.interceptors.request.use(req => {
   req.headers['X-Requested-With'] = 'XMLHttpRequest'
@@ -61,32 +63,73 @@ function getUserIsolationPageData() {
   console.log()
   console.log('查询小茅运信息:')
   return httpRequest(
-    'https://h5.moutai519.com.cn/game/isolationPage/getUserIsolationPageData',
+    baseURL + 'isolationPage/getUserIsolationPageData',
     'get',
     {
       __timestamp: +new Date()
     }
-  ).then(d => {
-    let { energy, energyReward, xmy } = d.data
+  ).then(async d => {
+    // status: 1. 未开始 3. 已完成
+    let { energy, energyReward, xmy, xmTravel } = d.data
+    let { status, remainChance, travelEndTime } = xmTravel
+    let endTime = travelEndTime * 1000
     console.log('当前小茅运值:', xmy)
-    console.log('本月剩余旅行奖励:', energyReward.value)
-    if (energyReward.value <= 0) {
+
+    // 未开始
+    if (status === 1) {
+      let { currentPeriodCanConvertXmyNum } = await getExchangeRateInfo()
+      console.log('本月剩余旅行奖励:', currentPeriodCanConvertXmyNum)
+
+      if (currentPeriodCanConvertXmyNum <= 0) {
+        // 当月无可领取奖励且未开始
+        return Promise.reject()
+      }
+      if (energy < 100) {
+        console.log('耐力不足, 当前耐力值:', energy)
+        return Promise.reject()
+      }
+    }
+
+    // 进行中
+    if (status === 2) {
+      console.log('旅行暂未结束')
+      console.log(
+        '本次旅行结束时间: ',
+        dayjs(endTime).format('YYYY-MM-DD HH:mm:ss')
+      )
+      console.log(
+        '本次旅行剩余时间: ',
+        dayjs.duration(endTime - +new Date()).format('HH 小时 mm 分钟 ss 秒')
+      )
       return Promise.reject()
     }
-    if (energy < 100) {
-      console.log('耐力不足')
-      return Promise.reject()
+
+    return {
+      remainChance, // 剩余次数
+      finish: status === 3
     }
+  })
+}
+
+// 获取本月剩余奖励耐力值
+function getExchangeRateInfo() {
+  return httpRequest(baseURL + 'synthesize/exchangeRateInfo', 'get', {
+    __timestamp: +new Date()
+  }).then(d => {
+    let { currentPeriodCanConvertXmyNum } = d.data
+
+    return { currentPeriodCanConvertXmyNum }
   })
 }
 
 function getXmTravelInfo() {
   console.log()
   console.log('获取旅行信息: ')
-  return httpRequest(baseURL + 'getXmTravelInfo', 'get', {
+  return httpRequest(TRAVEL_BASE_URL + 'getXmTravelInfo', 'get', {
     __timestamp: +new Date()
   }).then(d => {
-    let { lastStartTravelTs, travelTotalTime, remainTravelCnt } = d.data
+    let { lastStartTravelTs, travelTotalTime, remainTravelCnt, travelStatus } =
+      d.data
 
     let startTime = dayjs(lastStartTravelTs)
     let endTime = startTime.add(3, 'h')
@@ -96,7 +139,7 @@ function getXmTravelInfo() {
       console.log('今日暂未开始旅行')
     }
 
-    let finish = +new Date() - endTime.valueOf() >= 0
+    let finish = travelStatus === 3
     if (!finish) {
       console.log('旅行暂未结束')
       console.log(
@@ -126,7 +169,7 @@ function getUserEnergyAward() {
   console.log()
   console.log('获取申购耐力值: ')
   return httpRequest(
-    'https://h5.moutai519.com.cn/game/isolationPage/getUserEnergyAward',
+    baseURL + 'isolationPage/getUserEnergyAward',
     'post',
     {}
   ).then(d => {
@@ -142,7 +185,7 @@ function getUserEnergyAward() {
 function getXmTravelReward() {
   console.log()
   console.log('查询旅行奖励: ')
-  return httpRequest(baseURL + 'getXmTravelReward', 'get', {
+  return httpRequest(TRAVEL_BASE_URL + 'getXmTravelReward', 'get', {
     __timestamp: +new Date()
   }).then(d => {
     if (d.code === 2000 && d.data.travelRewardXmy) {
@@ -157,7 +200,7 @@ function getXmTravelReward() {
 function receiveReward() {
   console.log()
   console.log('领取旅行奖励: ')
-  return httpRequest(baseURL + 'receiveReward', 'post', {}).then(d => {
+  return httpRequest(TRAVEL_BASE_URL + 'receiveReward', 'post', {}).then(d => {
     if (d.code === 2000) {
       console.log('领取成功')
     } else {
@@ -170,7 +213,7 @@ function receiveReward() {
 function startTravel() {
   console.log()
   console.log('开始旅行: ')
-  return httpRequest(baseURL + 'startTravel', 'post', {}).then(d => {
+  return httpRequest(TRAVEL_BASE_URL + 'startTravel', 'post', {}).then(d => {
     if (d.code === 2000) {
       console.log('开始旅行成功')
     } else {
@@ -183,7 +226,7 @@ function startTravel() {
 function shareReward() {
   console.log()
   console.log('每日首次分享可领取耐力:')
-  return httpRequest(baseURL + 'shareReward', 'post', {}).then(d => {
+  return httpRequest(TRAVEL_BASE_URL + 'shareReward', 'post', {}).then(d => {
     if (d.code === 2000) {
       console.log('分享成功')
     } else {
@@ -198,14 +241,14 @@ async function init() {
   let time = +dayjs().format('HH')
   if (time >= 9 && time < 20) {
     try {
-      await getUserIsolationPageData()
-      let { remainTravelCnt, finish } = await getXmTravelInfo()
+      let { remainChance, finish } = await getUserIsolationPageData()
+      // let { remainTravelCnt, finish } = await getXmTravelInfo()
       if (finish) {
         await getXmTravelReward()
         await receiveReward()
         await shareReward()
       }
-      if (remainTravelCnt) await startTravel()
+      if (remainChance) await startTravel()
     } catch (e) {}
   } else {
     console.log()
