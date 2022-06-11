@@ -5,7 +5,8 @@
 ### TODO
 
 - [x] 自动旅行
-- [x] 领取申购耐力值
+- [x] 每日首次旅行分享
+- [ ] 领取申购耐力值
 
 ### 安装
 
@@ -20,7 +21,10 @@ npm install
 
 ```shell
 cp config.example.js config.js
+# 脚本启动
 pm2 start script.json
+# 日志查看
+pm2 logs xmtravel --out --lines=100 
 ```
 
 ![xmtravel_log.png](./assets/xmtravel_log.png)
