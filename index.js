@@ -69,21 +69,31 @@ function getUserIsolationPageData() {
       __timestamp: +new Date()
     }
   ).then(async d => {
-    // status: 1. 未开始 3. 已完成
+    // energy: 耐力值
+    // xmy: 小茅运值
     let { energy, energyReward, xmy, xmTravel } = d.data
+    // status: 1. 未开始 3. 已完成
+    // remainChance: 今日剩余旅行次数
+    // travelEndTime: 旅行结束时间
     let { status, remainChance, travelEndTime } = xmTravel
+    let { value } = energyReward // 可领取申购奖励
     let endTime = travelEndTime * 1000
     console.log('当前小茅运值:', xmy)
 
+    if (value) {
+      await getUserEnergyAward()
+    }
+
+    let { currentPeriodCanConvertXmyNum } = await getExchangeRateInfo()
+    console.log('本月剩余旅行奖励:', currentPeriodCanConvertXmyNum)
+
+    if (currentPeriodCanConvertXmyNum <= 0) {
+      // 当月无可领取奖励
+      return Promise.reject()
+    }
+
     // 未开始
     if (status === 1) {
-      let { currentPeriodCanConvertXmyNum } = await getExchangeRateInfo()
-      console.log('本月剩余旅行奖励:', currentPeriodCanConvertXmyNum)
-
-      if (currentPeriodCanConvertXmyNum <= 0) {
-        // 当月无可领取奖励且未开始
-        return Promise.reject()
-      }
       if (energy < 100) {
         console.log('耐力不足, 当前耐力值:', energy)
         return Promise.reject()
@@ -173,7 +183,8 @@ function getUserEnergyAward() {
     'post',
     {}
   ).then(d => {
-    if (d.code === 2000) {
+    console.log(d)
+    if (d.code === 200) {
       console.log('耐力值领取成功')
     } else {
       console.log('耐力值领取失败', d.message || '')
