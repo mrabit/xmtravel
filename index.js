@@ -7,6 +7,9 @@ require('./console')
 
 dayjs.extend(duration)
 
+let cookies = typeof cookie === 'object' ? cookie : [cookie]
+let currentCookie = ''
+
 const TRAVEL_BASE_URL = baseURL + 'xmTravel/'
 
 // axios.defaults.baseURL = baseURL
@@ -19,7 +22,7 @@ axios.interceptors.request.use(req => {
   ] = `Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 moutaiapp/1.2.1 device-id/${deviceId}`
   req.headers['Referer'] =
     'https://h5.moutai519.com.cn/gux/game/main?appConfig=2_1_2'
-  req.headers['Cookie'] = cookie
+  req.headers['Cookie'] = currentCookie
   req.headers['Accept'] = 'application/json, text/javascript, */*; q=0.01'
   req.headers['Content-Type'] = 'application/json'
   req.headers['MT-APP-Version'] = '1.0.0'
@@ -72,16 +75,17 @@ function getUserIsolationPageData() {
     // energy: 耐力值
     // xmy: 小茅运值
     let { energy, energyReward, xmy, xmTravel } = d.data
-    // status: 1. 未开始 3. 已完成
+    // status: 1. 未开始 2. 进行中 3. 已完成
     // remainChance: 今日剩余旅行次数
     // travelEndTime: 旅行结束时间
     let { status, remainChance, travelEndTime } = xmTravel
-    let { value } = energyReward // 可领取申购奖励
+    let { value } = energyReward // 可领取申购耐力值奖励
     let endTime = travelEndTime * 1000
     console.log('当前小茅运值:', xmy)
 
     if (value) {
       await getUserEnergyAward()
+      energy += value
     }
 
     let { currentPeriodCanConvertXmyNum } = await getExchangeRateInfo()
@@ -183,7 +187,6 @@ function getUserEnergyAward() {
     'post',
     {}
   ).then(d => {
-    console.log(d)
     if (d.code === 200) {
       console.log('耐力值领取成功')
     } else {
@@ -251,16 +254,19 @@ async function init() {
   console.log('开始执行')
   let time = +dayjs().format('HH')
   if (time >= 9 && time < 20) {
-    try {
-      let { remainChance, finish } = await getUserIsolationPageData()
-      // let { remainTravelCnt, finish } = await getXmTravelInfo()
-      if (finish) {
-        await getXmTravelReward()
-        await receiveReward()
-        await shareReward()
-      }
-      if (remainChance) await startTravel()
-    } catch (e) {}
+    for await (i of cookies) {
+      currentCookie = i
+      try {
+        let { remainChance, finish } = await getUserIsolationPageData()
+        // let { remainTravelCnt, finish } = await getXmTravelInfo()
+        if (finish) {
+          await getXmTravelReward()
+          await receiveReward()
+          await shareReward()
+        }
+        if (remainChance) await startTravel()
+      } catch (e) {}
+    }
   } else {
     console.log()
     console.log('活动未开始')
