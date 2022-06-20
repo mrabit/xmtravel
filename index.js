@@ -41,8 +41,12 @@ function getGUID(key = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx') {
   })
 }
 
+function log(...msg) {
+  console.log(`账号${cookies.indexOf(currentCookie) + 1}`, ...msg)
+}
+
 function sendBarkMsg(msg) {
-  console.log(msg)
+  log(msg)
   if (!bark) return false
   return barkAxios({
     method: 'get',
@@ -72,20 +76,16 @@ async function httpRequest(url, method = 'get', _data) {
         return Promise.resolve(d.response.data)
       }
       if (d.response.status === 401 && d.response.data) {
-        await sendBarkMsg(
-          `账号${
-            cookies.indexOf(currentCookie) + 1
-          } 登录失效, 请更新 cookie 配置`
-        )
+        await sendBarkMsg(`登录失效, 请更新 cookie 配置`)
         return Promise.reject('登录失效')
       }
-      console.log(d)
+      log(d)
     })
 }
 
 function getUserIsolationPageData() {
   console.log()
-  console.log('查询小茅运信息:')
+  log('查询小茅运信息:')
   return httpRequest(
     baseURL + 'isolationPage/getUserIsolationPageData',
     'get',
@@ -102,7 +102,7 @@ function getUserIsolationPageData() {
     let { status, remainChance, travelEndTime } = xmTravel
     let { value } = energyReward // 可领取申购耐力值奖励
     let endTime = travelEndTime * 1000
-    console.log('当前小茅运值:', xmy)
+    log('当前小茅运值:', xmy)
 
     if (value) {
       await getUserEnergyAward()
@@ -110,7 +110,7 @@ function getUserIsolationPageData() {
     }
 
     let { currentPeriodCanConvertXmyNum } = await getExchangeRateInfo()
-    console.log('本月剩余旅行奖励:', currentPeriodCanConvertXmyNum)
+    log('本月剩余旅行奖励:', currentPeriodCanConvertXmyNum)
 
     if (currentPeriodCanConvertXmyNum <= 0) {
       // 当月无可领取奖励
@@ -120,19 +120,16 @@ function getUserIsolationPageData() {
     // 未开始
     if (status === 1) {
       if (energy < 100) {
-        console.log('耐力不足, 当前耐力值:', energy)
+        log('耐力不足, 当前耐力值:', energy)
         return Promise.reject()
       }
     }
 
     // 进行中
     if (status === 2) {
-      console.log('旅行暂未结束')
-      console.log(
-        '本次旅行结束时间: ',
-        dayjs(endTime).format('YYYY-MM-DD HH:mm:ss')
-      )
-      console.log(
+      log('旅行暂未结束')
+      log('本次旅行结束时间: ', dayjs(endTime).format('YYYY-MM-DD HH:mm:ss'))
+      log(
         '本次旅行剩余时间: ',
         dayjs.duration(endTime - +new Date()).format('HH 小时 mm 分钟 ss 秒')
       )
@@ -159,7 +156,7 @@ function getExchangeRateInfo() {
 
 function getXmTravelInfo() {
   console.log()
-  console.log('获取旅行信息: ')
+  log('获取旅行信息: ')
   return httpRequest(TRAVEL_BASE_URL + 'getXmTravelInfo', 'get', {
     __timestamp: +new Date()
   }).then(d => {
@@ -171,28 +168,28 @@ function getXmTravelInfo() {
     let firstTravel = !dayjs().isSame(startTime, 'day')
 
     if (firstTravel) {
-      console.log('今日暂未开始旅行')
+      log('今日暂未开始旅行')
     }
 
     let finish = travelStatus === 3
     if (!finish) {
-      console.log('旅行暂未结束')
-      console.log(
+      log('旅行暂未结束')
+      log(
         '本次旅行开始时间: ',
         dayjs(lastStartTravelTs).format('YYYY-MM-DD HH:mm:ss')
       )
-      console.log(
+      log(
         '本次旅行结束时间: ',
         startTime.add(3, 'h').format('YYYY-MM-DD HH:mm:ss')
       )
-      console.log(
+      log(
         '本次旅行剩余时间: ',
         dayjs.duration(endTime - +new Date()).format('HH 小时 mm 分钟 ss 秒')
       )
       return Promise.reject()
     }
-    if (!remainTravelCnt) console.log('当日旅行次数已耗尽')
-    else console.log('剩余旅行次数: ', remainTravelCnt)
+    if (!remainTravelCnt) log('当日旅行次数已耗尽')
+    else log('剩余旅行次数: ', remainTravelCnt)
     return {
       remainTravelCnt,
       finish: finish && !firstTravel // 今日已首次旅行过且当前已完成
@@ -202,16 +199,16 @@ function getXmTravelInfo() {
 
 function getUserEnergyAward() {
   console.log()
-  console.log('获取申购耐力值: ')
+  log('获取申购耐力值: ')
   return httpRequest(
     baseURL + 'isolationPage/getUserEnergyAward',
     'post',
     {}
   ).then(d => {
     if (d.code === 200) {
-      console.log('耐力值领取成功')
+      log('耐力值领取成功')
     } else {
-      console.log('耐力值领取失败', d.message || '')
+      log('耐力值领取失败', d.message || '')
       return Promise.reject()
     }
   })
@@ -219,15 +216,15 @@ function getUserEnergyAward() {
 
 function getXmTravelReward() {
   console.log()
-  console.log('查询旅行奖励: ')
+  log('查询旅行奖励: ')
   return httpRequest(TRAVEL_BASE_URL + 'getXmTravelReward', 'get', {
     __timestamp: +new Date()
   }).then(d => {
     if (d.code === 2000 && d.data.travelRewardXmy) {
-      console.log('可获取小茅运: ', d.data.travelRewardXmy)
+      log('可获取小茅运: ', d.data.travelRewardXmy)
       return d.data.travelRewardXmy
     } else {
-      console.log('旅行暂未完成', d.message || '')
+      log('旅行暂未完成', d.message || '')
       return Promise.reject()
     }
   })
@@ -235,12 +232,12 @@ function getXmTravelReward() {
 
 function receiveReward(travelRewardXmy) {
   console.log()
-  console.log('领取旅行奖励: ')
+  log('领取旅行奖励: ')
   return httpRequest(TRAVEL_BASE_URL + 'receiveReward', 'post', {}).then(d => {
     if (d.code === 2000) {
       sendBarkMsg('成功领取旅行奖励小茅运' + travelRewardXmy)
     } else {
-      console.log('领取失败', d.message || '')
+      log('领取失败', d.message || '')
       return Promise.reject()
     }
   })
@@ -248,12 +245,12 @@ function receiveReward(travelRewardXmy) {
 
 function startTravel() {
   console.log()
-  console.log('开始旅行: ')
+  log('开始旅行: ')
   return httpRequest(TRAVEL_BASE_URL + 'startTravel', 'post', {}).then(d => {
     if (d.code === 2000) {
-      console.log('开始旅行成功')
+      log('开始旅行成功')
     } else {
-      console.log('开始旅行失败', d.message || '')
+      log('开始旅行失败', d.message || '')
       return Promise.reject()
     }
   })
@@ -261,12 +258,12 @@ function startTravel() {
 
 function shareReward() {
   console.log()
-  console.log('每日首次分享可领取耐力:')
+  log('每日首次分享可领取耐力:')
   return httpRequest(TRAVEL_BASE_URL + 'shareReward', 'post', {}).then(d => {
     if (d.code === 2000) {
-      console.log('分享成功')
+      log('分享成功')
     } else {
-      console.log('分享失败', d.message || '')
+      log('分享失败', d.message || '')
       return Promise.reject()
     }
   })
