@@ -2,7 +2,7 @@ const { default: axios } = require('axios')
 const dayjs = require('dayjs')
 const duration = require('dayjs/plugin/duration')
 const schedule = require('node-schedule')
-const { baseURL, cookie, deviceId } = require('./config')
+const { baseURL, cookie, deviceId, bark } = require('./config')
 require('./console')
 
 dayjs.extend(duration)
@@ -10,10 +10,12 @@ dayjs.extend(duration)
 let cookies = typeof cookie === 'object' ? cookie : [cookie]
 let currentCookie = ''
 
+const xmTravelAxios = axios.create()
+const barkAxios = axios.create()
+
 const TRAVEL_BASE_URL = baseURL + 'xmTravel/'
 
-// axios.defaults.baseURL = baseURL
-axios.interceptors.request.use(req => {
+xmTravelAxios.interceptors.request.use(req => {
   req.headers['X-Requested-With'] = 'XMLHttpRequest'
   req.headers['Accept-Language'] = 'zh-cn'
   req.headers['MT-Request-ID'] = getGUID()
@@ -39,6 +41,17 @@ function getGUID(key = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx') {
   })
 }
 
+function sendBarkMsg(msg) {
+  console.log(msg)
+  if (!bark) return false
+  return barkAxios({
+    method: 'get',
+    url: `${bark}/${encodeURIComponent('xmtravel')}/${encodeURIComponent(
+      msg
+    )}?group=${encodeURIComponent('xmtravel')}`
+  })
+}
+
 async function httpRequest(url, method = 'get', _data) {
   let params = ''
   let data = {}
@@ -47,16 +60,24 @@ async function httpRequest(url, method = 'get', _data) {
   } else {
     data = _data
   }
-  return await axios({
+  return await xmTravelAxios({
     url,
     method,
     data,
     params
   })
     .then(d => d.data)
-    .catch(d => {
+    .catch(async d => {
       if (d.response.status === 500 && d.response.data) {
         return Promise.resolve(d.response.data)
+      }
+      if (d.response.status === 401 && d.response.data) {
+        await sendBarkMsg(
+          `账号${
+            cookies.indexOf(currentCookie) + 1
+          } 登录失效, 请更新 cookie 配置`
+        )
+        return Promise.reject('登录失效')
       }
       console.log(d)
     })
@@ -204,6 +225,7 @@ function getXmTravelReward() {
   }).then(d => {
     if (d.code === 2000 && d.data.travelRewardXmy) {
       console.log('可获取小茅运: ', d.data.travelRewardXmy)
+      return d.data.travelRewardXmy
     } else {
       console.log('旅行暂未完成', d.message || '')
       return Promise.reject()
@@ -211,12 +233,12 @@ function getXmTravelReward() {
   })
 }
 
-function receiveReward() {
+function receiveReward(travelRewardXmy) {
   console.log()
   console.log('领取旅行奖励: ')
   return httpRequest(TRAVEL_BASE_URL + 'receiveReward', 'post', {}).then(d => {
     if (d.code === 2000) {
-      console.log('领取成功')
+      sendBarkMsg('成功领取旅行奖励小茅运' + travelRewardXmy)
     } else {
       console.log('领取失败', d.message || '')
       return Promise.reject()
@@ -260,8 +282,8 @@ async function init() {
         let { remainChance, finish } = await getUserIsolationPageData()
         // let { remainTravelCnt, finish } = await getXmTravelInfo()
         if (finish) {
-          await getXmTravelReward()
-          await receiveReward()
+          let travelRewardXmy = await getXmTravelReward()
+          await receiveReward(travelRewardXmy)
           await shareReward()
         }
         if (remainChance) await startTravel()
