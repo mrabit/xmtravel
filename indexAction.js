@@ -1,2 +1,3 @@
-const index = require('./index')
-index.init()
+const api = require('./api')
+// console.log(index)
+api.init()
