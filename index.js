@@ -298,3 +298,5 @@ async function init() {
 
 init()
 schedule.scheduleJob('00 */30 * * * *', init) // 每半小时
+
+exports.init = init
