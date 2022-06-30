@@ -24,11 +24,16 @@ cp config.example.js config.js
 # 脚本启动
 pm2 start script.json
 # 日志查看
-pm2 logs xmtravel --out --lines=100 
+pm2 logs xmtravel --out --lines=100
 ```
 
 ![xmtravel_log.png](./assets/xmtravel_log.png)
 
-### 免责申明
+### 申明
 
-本代码仅用于学习，下载后请勿用于商业用途
+- 本项目仅做学习交流, 禁止用于各种非法途径
+- 项目中的所有内容均源于互联网, 仅限于小范围内学习参考, 如有侵权请第一时间联系 [本项目作者](https://github.com/mrabit) 进行删除
+
+### 注意
+
+[关于使用 Actions 的注意事项](https://www.v2ex.com/t/817831), 建议在本地部署启动
