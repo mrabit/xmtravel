@@ -85,11 +85,12 @@ async function httpRequest(url, method = 'get', _data) {
 function getUserIsolationPageData() {
   console.log()
   log('查询小茅运信息:')
+  let currentDate = +new Date()
   return httpRequest(
     baseURL + 'isolationPage/getUserIsolationPageData',
     'get',
     {
-      __timestamp: +new Date()
+      __timestamp: currentDate
     }
   ).then(async d => {
     // energy: 耐力值
@@ -130,7 +131,7 @@ function getUserIsolationPageData() {
       log('本次旅行结束时间: ', dayjs(endTime).format('YYYY-MM-DD HH:mm:ss'))
       log(
         '本次旅行剩余时间: ',
-        dayjs.duration(endTime - +new Date()).format('HH 小时 mm 分钟 ss 秒')
+        dayjs.duration(endTime - currentDate).format('HH 小时 mm 分钟 ss 秒')
       )
       return Promise.reject()
     }
@@ -150,49 +151,6 @@ function getExchangeRateInfo() {
     let { currentPeriodCanConvertXmyNum } = d.data
 
     return { currentPeriodCanConvertXmyNum }
-  })
-}
-
-function getXmTravelInfo() {
-  console.log()
-  log('获取旅行信息: ')
-  return httpRequest(TRAVEL_BASE_URL + 'getXmTravelInfo', 'get', {
-    __timestamp: +new Date()
-  }).then(d => {
-    let { lastStartTravelTs, travelTotalTime, remainTravelCnt, travelStatus } =
-      d.data
-
-    let startTime = dayjs(lastStartTravelTs)
-    let endTime = startTime.add(3, 'h')
-    let firstTravel = !dayjs().isSame(startTime, 'day')
-
-    if (firstTravel) {
-      log('今日暂未开始旅行')
-    }
-
-    let finish = travelStatus === 3
-    if (!finish) {
-      log('旅行暂未结束')
-      log(
-        '本次旅行开始时间: ',
-        dayjs(lastStartTravelTs).format('YYYY-MM-DD HH:mm:ss')
-      )
-      log(
-        '本次旅行结束时间: ',
-        startTime.add(3, 'h').format('YYYY-MM-DD HH:mm:ss')
-      )
-      log(
-        '本次旅行剩余时间: ',
-        dayjs.duration(endTime - +new Date()).format('HH 小时 mm 分钟 ss 秒')
-      )
-      return Promise.reject()
-    }
-    if (!remainTravelCnt) log('当日旅行次数已耗尽')
-    else log('剩余旅行次数: ', remainTravelCnt)
-    return {
-      remainTravelCnt,
-      finish: finish && !firstTravel // 今日已首次旅行过且当前已完成
-    }
   })
 }
 
@@ -276,12 +234,15 @@ async function init() {
       currentCookie = i
       try {
         let { remainChance, finish } = await getUserIsolationPageData()
-        // let { remainTravelCnt, finish } = await getXmTravelInfo()
         if (finish) {
           let travelRewardXmy = await getXmTravelReward()
           await receiveReward(travelRewardXmy)
           await shareReward()
         }
+
+        if (!remainChance) log('当日旅行次数已耗尽')
+        else log('当日剩余旅行次数: ', remainChance)
+
         if (remainChance) await startTravel()
       } catch (e) {}
     }
@@ -294,6 +255,5 @@ async function init() {
   console.log('脚本执行完毕')
   console.log()
 }
-
 
 exports.init = init
