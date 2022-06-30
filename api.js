@@ -6,8 +6,15 @@ require('./console')
 
 dayjs.extend(duration)
 
-let cookies = typeof cookie === 'object' ? cookie : [cookie]
+let cookies = (typeof cookie === 'object' ? cookie : cookie.split('\n')).filter(
+  v => v
+)
 let currentCookie = ''
+
+if (!cookies.length) {
+  console.log('未配置cookie, 程序终止')
+  process.exit(1)
+}
 
 const xmTravelAxios = axios.create()
 const barkAxios = axios.create()
@@ -20,7 +27,9 @@ xmTravelAxios.interceptors.request.use(req => {
   req.headers['MT-Request-ID'] = getGUID()
   req.headers[
     'User-Agent'
-  ] = `Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 moutaiapp/1.2.1 device-id/${deviceId}`
+  ] = `Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 moutaiapp/1.2.1 device-id/${
+    deviceId || 'moutaiapp'
+  }`
   req.headers['Referer'] =
     'https://h5.moutai519.com.cn/gux/game/main?appConfig=2_1_2'
   req.headers['Cookie'] = currentCookie
