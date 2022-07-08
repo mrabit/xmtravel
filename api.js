@@ -147,7 +147,8 @@ function getUserIsolationPageData() {
 
     return {
       remainChance, // 剩余次数
-      finish: status === 3
+      finish: status === 3,
+      currentPeriodCanConvertXmyNum
     }
   })
 }
@@ -242,11 +243,17 @@ async function init() {
     for await (i of cookies) {
       currentCookie = i
       try {
-        let { remainChance, finish } = await getUserIsolationPageData()
+        let { remainChance, finish, currentPeriodCanConvertXmyNum } =
+          await getUserIsolationPageData()
         if (finish) {
           let travelRewardXmy = await getXmTravelReward()
           await receiveReward(travelRewardXmy)
           await shareReward()
+          // 本次旅行奖励领取后, 当月实际剩余旅行奖励
+          if (currentPeriodCanConvertXmyNum - travelRewardXmy <= 0) {
+            log('当月无可领取奖励')
+            return Promise.reject()
+          }
         }
 
         if (!remainChance) log('当日旅行次数已耗尽')
