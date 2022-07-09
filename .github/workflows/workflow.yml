@@ -28,6 +28,5 @@ jobs:
           MT_DEVICEID: ${{ secrets.MT_DEVICEID }}
           BARK: ${{ secrets.BARK }}
         run: |
-          cp config.example.js config.js
           chmod 777 indexAction.js
           node ./indexAction.js
