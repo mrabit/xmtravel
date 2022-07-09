@@ -10,6 +10,12 @@
 - [x] github action 支持
 - [x] 青龙面板支持
 
+### 环境变量:
+
+- MT_COOKIE: 小茅运 H5 页面请求 cookie
+- MT_DEVICEID: User-Agent 里的 deviceId 值
+- BARK: bark 推送地址
+
 ### 本地启动
 
 ```shell
