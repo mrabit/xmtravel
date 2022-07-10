@@ -8,8 +8,10 @@ dayjs.extend(duration)
 let cookies = []
 
 if (Array.isArray(cookie)) cookies = cookie
-else if (cookie.indexOf('&') > -1) cookies = cookie.split('&').filter(v => v)
-else if (cookie.indexOf('\n') > -1) cookies = cookie.split('\n').filter(v => v)
+else if (cookie.indexOf('&') > -1) cookies = cookie.split('&')
+else if (cookie.indexOf('\n') > -1) cookies = cookie.split('\n')
+
+cookies = cookies.filter(v => v)
 
 let currentCookie = ''
 
