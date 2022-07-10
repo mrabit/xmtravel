@@ -5,10 +5,12 @@ const { baseURL, cookie, deviceId, bark } = require('./config')
 require('./console')
 
 dayjs.extend(duration)
+let cookies = []
 
-let cookies = (typeof cookie === 'object' ? cookie : cookie.split('\n')).filter(
-  v => v
-)
+if (Array.isArray(cookie)) cookies = cookie
+else if (cookie.indexOf('&') > -1) cookies = cookie.split('&').filter(v => v)
+else if (cookie.indexOf('\n') > -1) cookies = cookie.split('\n').filter(v => v)
+
 let currentCookie = ''
 
 if (!cookies.length) {
@@ -59,7 +61,7 @@ function sendBarkMsg(msg) {
   return barkAxios({
     method: 'get',
     url: `${bark}/${encodeURIComponent('xmtravel')}/${encodeURIComponent(
-      msg
+      `账号${cookies.indexOf(currentCookie) + 1} ` + msg
     )}?group=${encodeURIComponent('xmtravel')}`
   })
 }
