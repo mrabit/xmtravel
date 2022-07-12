@@ -10,6 +10,7 @@ let cookies = []
 if (Array.isArray(cookie)) cookies = cookie
 else if (cookie.indexOf('&') > -1) cookies = cookie.split('&')
 else if (cookie.indexOf('\n') > -1) cookies = cookie.split('\n')
+else cookies = [cookie]
 
 cookies = cookies.filter(v => v)
 
