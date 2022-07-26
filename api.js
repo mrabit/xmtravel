@@ -257,7 +257,7 @@ async function init() {
           // 本次旅行奖励领取后, 当月实际剩余旅行奖励
           if (currentPeriodCanConvertXmyNum - travelRewardXmy <= 0) {
             log('当月无可领取奖励')
-            return Promise.reject()
+            return false
           }
         }
 
