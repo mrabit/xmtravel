@@ -1,4 +1,4 @@
-const { default: axios } = require('axios')
+const axios = require('axios')
 const dayjs = require('dayjs')
 const duration = require('dayjs/plugin/duration')
 const { baseURL, cookie, deviceId, bark } = require('./config')
